@@ -21,7 +21,7 @@
 
 ## Overview
 
-> **Designed for CLI Tools:** Trestleboard is built for AI CLI tools (Claude CLI, Gemini CLI, GitHub Copilot CLI) that support system prompts and filesystem access. These tools can load personas directly and read/write artifacts automatically. While the personas work in web interfaces, you'll need to manually handle artifact chaining.
+> **Designed for CLI Tools:** Trestleboard is built for AI CLI tools (Claude Code, Gemini CLI, GitHub Copilot CLI) that have filesystem access. These tools can load personas directly and read/write artifacts automatically. While the personas work in web interfaces, you'll need to manually handle artifact chaining.
 
 Trestleboard uses AI-powered personas to guide you through software solution delivery—but **the real value isn't the workflow, it's the knowledge you capture along the way.**
 
@@ -354,16 +354,18 @@ See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions.
    cd Trestleboard
    ```
 
-2. **Start with the Analyst** (choose your preferred CLI)
+2. **Start with the Analyst** (choose your preferred CLI, and run it from the repository root)
    ```bash
-   # Using Claude CLI
-   claude --system-prompt personas/analyst.md
+   # Claude Code
+   claude --append-system-prompt-file personas/analyst.md
 
-   # Using Gemini CLI
-   gemini --system-instruction "$(cat personas/analyst.md)"
+   # Gemini CLI (in-session; see the Gemini section below for a system-prompt option)
+   gemini
+   # then: Read personas/analyst.md and adopt it as your persona for this session.
 
-   # Using GitHub Copilot CLI
-   gh copilot explain --system-prompt personas/analyst.md
+   # GitHub Copilot CLI (in-session)
+   copilot
+   # then: Read personas/analyst.md and adopt it as your persona for this session.
    ```
 
 3. **Progress through personas** as artifacts are completed
@@ -372,36 +374,45 @@ See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions.
 
 ## AI CLI Tools
 
-Trestleboard is **AI-agnostic**. Use whichever CLI tool you prefer:
+Trestleboard is **AI-agnostic**. Use whichever CLI tool you prefer. Run each tool from the
+Trestleboard repository root so the personas can read `personas/`, `templates/` and `projects/`.
 
-### Claude CLI (Anthropic)
+### Claude Code (Anthropic)
 
 **Install:**
 ```bash
-# Via npm
-npm install -g @anthropic-ai/claude-code
+# Native installer (macOS, Linux, WSL)
+curl -fsSL https://claude.ai/install.sh | bash
 
-# Via Homebrew (macOS)
-brew install claude
+# Homebrew (macOS)
+brew install --cask claude-code
+
+# npm (Node.js 22+)
+npm install -g @anthropic-ai/claude-code
 ```
 
 **Authenticate:**
 ```bash
 claude auth login
-# Or set environment variable
-export ANTHROPIC_API_KEY=your-api-key
+# Or run `claude` and follow the browser prompts
 ```
 
 **Usage with Trestleboard:**
 ```bash
-# Start with a persona
-claude --system-prompt personas/analyst.md
+# Start with a persona (adds the persona to Claude Code's default system prompt)
+claude --append-system-prompt-file personas/analyst.md
 
-# Work in a specific project directory
-claude --system-prompt personas/paired-developer.md --cwd projects/my-project
+# Switch personas by starting a new session with a different file
+claude --append-system-prompt-file personas/paired-developer.md
 ```
 
-**Documentation:** [Claude CLI Docs](https://docs.anthropic.com/en/docs/claude-cli)
+> **Why `--append-system-prompt-file`?** It layers the persona on top of Claude Code's
+> default prompt, so Claude keeps its file, shell and git tooling guidance, which the
+> personas rely on to read `input/` and write `output/`. `--system-prompt-file` also works,
+> but it replaces the default prompt entirely. Note that `--system-prompt` (without
+> `-file`) takes literal text, not a path.
+
+**Documentation:** [Claude Code CLI reference](https://code.claude.com/docs/en/cli-reference)
 
 **Tip: Watch the AI Reason**
 
@@ -418,63 +429,83 @@ Watching the reasoning process helps you internalize the frameworks and learn to
 
 **Install:**
 ```bash
-# Via npm
-npm install -g @anthropic-ai/gemini-cli
+# npm
+npm install -g @google/gemini-cli
 
-# Or download from Google
-curl -sSL https://sdk.cloud.google.com | bash
+# Homebrew (macOS/Linux)
+brew install gemini-cli
 ```
 
 **Authenticate:**
 ```bash
-# Using Google Cloud authentication
-gcloud auth login
+# Run `gemini` and choose "Login with Google" on first launch
+gemini
 
-# Or set API key
+# Or use an API key
 export GEMINI_API_KEY=your-api-key
 ```
 
 **Usage with Trestleboard:**
-```bash
-# Start with a persona (inline system instruction)
-gemini --system-instruction "$(cat personas/analyst.md)"
 
-# Interactive mode with persona
-gemini chat --system-instruction "$(cat personas/solution-architect.md)"
+Gemini CLI has no flag that appends a system prompt. The simplest approach is to load the
+persona inside the session:
+
+```
+gemini
+> Read personas/analyst.md and adopt it as your persona for this session.
 ```
 
-**Documentation:** [Gemini CLI Docs](https://cloud.google.com/vertex-ai/docs/generative-ai/gemini-cli)
+To use a persona as the actual system prompt, point `GEMINI_SYSTEM_MD` at the file:
+
+```bash
+GEMINI_SYSTEM_MD=personas/analyst.md gemini
+```
+
+> **Caution:** `GEMINI_SYSTEM_MD` *replaces* Gemini CLI's built-in system prompt, including
+> its tool-use instructions. The in-session approach keeps them.
+
+**Documentation:** [Gemini CLI docs](https://geminicli.com/docs) ·
+[System prompt override](https://geminicli.com/docs/cli/system-prompt/)
 
 ---
 
 ### GitHub Copilot CLI
 
-**Install:**
+**Install** (requires an active GitHub Copilot subscription):
 ```bash
-# Requires GitHub CLI first
-brew install gh
+# npm (Node.js 22+)
+npm install -g @github/copilot
 
-# Then install Copilot extension
-gh extension install github/gh-copilot
+# Homebrew (macOS/Linux)
+brew install copilot-cli
+
+# WinGet (Windows)
+winget install GitHub.Copilot
 ```
 
 **Authenticate:**
 ```bash
-gh auth login
+copilot login
+# Or run `copilot` and use the /login slash command
 ```
 
 **Usage with Trestleboard:**
-```bash
-# Use with explain command
-gh copilot explain --system-prompt personas/analyst.md
 
-# Interactive suggest mode
-gh copilot suggest --system-prompt personas/paired-developer.md
+Copilot CLI has no system-prompt flag. Load the persona inside the session:
+
+```
+copilot
+> Read personas/analyst.md and adopt it as your persona for this session.
 ```
 
-**Note:** GitHub Copilot CLI integration may vary. You can also paste persona content directly into GitHub Copilot Chat in VS Code or other IDEs.
+For repeated use, Copilot CLI also supports [custom agents](https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/overview)
+defined as Markdown agent profiles in `.github/agents/` or `~/.copilot/agents/`, invoked
+with `/agent` or `copilot --agent=<name>`.
 
-**Documentation:** [GitHub Copilot CLI Docs](https://docs.github.com/en/copilot/github-copilot-in-the-cli)
+> **Note:** The older `gh copilot` extension (`gh copilot explain` / `suggest`) has been
+> replaced by the standalone Copilot CLI and does not accept a system prompt.
+
+**Documentation:** [GitHub Copilot CLI docs](https://docs.github.com/en/copilot/how-tos/copilot-cli)
 
 ---
 
@@ -567,14 +598,16 @@ If a downstream persona detects contradictions with upstream artifacts:
 Trestleboard/
 ├── README.md
 ├── QUICKSTART.md
-├── trestleboard.yaml          # Configuration (storage backend, paths)
+├── trestleboard.yaml          # Configuration (storage, diagrams, personas, customizations)
 ├── Trestleboard.png
 │
 ├── personas/
 │   ├── analyst.md              # Discovery & Inception Deck
 │   ├── solution-architect.md   # Technical Specification
 │   ├── paired-developer.md     # TDD Implementation
-│   └── quality.md              # Automated testing & consistency
+│   ├── quality.md              # Automated testing & consistency
+│   ├── agile-coach.md          # Flow, team dynamics, engineering excellence
+│   └── executive-coach.md      # Cross-domain coaching and decision guidance
 │
 ├── templates/
 │   ├── inception-deck/
@@ -582,21 +615,34 @@ Trestleboard/
 │   ├── specification/
 │   │   ├── specification.md    # Full spec with Mermaid diagrams
 │   │   └── adr-template.md     # Standalone ADR template
-│   └── development/
-│       ├── task-breakdown.md
-│       ├── code-review-checklist.md
-│       └── implementation-guide.md
+│   ├── development/
+│   │   ├── task-breakdown.md
+│   │   ├── code-review-checklist.md
+│   │   ├── implementation-guide.md
+│   │   └── dev-findings.md
+│   ├── quality/
+│   │   └── quality-report.md
+│   └── guidance-assessment/
+│       └── guidance-assessment.md
 │
 ├── schemas/
 │   ├── project-meta.schema.json
 │   ├── inception-deck.schema.json
 │   ├── specification.schema.json
-│   └── development.schema.json
+│   ├── development.schema.json
+│   ├── quality.schema.json
+│   └── guidance-assessment.schema.json
+│
+├── scripts/                    # tb-* CLI tools, storage providers, tests
+├── config/
+│   └── customizations.example/ # Examples copied by `npm run customize -- init`
+├── docs/
+│   └── design.md               # Architecture of the tooling
 │
 └── projects/
     └── <project-name>/
         ├── input/              # Upstream artifacts + user docs
-        └── output/             # All generated artifacts (flat)
+        └── output/             # All generated artifacts
 ```
 
 ---
@@ -624,6 +670,9 @@ All templates use **Mustache/Handlebars** syntax for variable substitution:
 | `task-breakdown.md` | Development tasks with estimates |
 | `code-review-checklist.md` | PR review criteria |
 | `implementation-guide.md` | Per-feature implementation guide |
+| `dev-findings.md` | Paired Developer findings log |
+| `quality-report.md` | Quality report: test strategy, findings, consistency checks |
+| `guidance-assessment.md` | Optional guidance assessment from any persona |
 
 ---
 
@@ -725,6 +774,8 @@ Schemas validate the structured data output:
 | `inception-deck.schema.json` | All 10 Inception Deck sections |
 | `specification.schema.json` | Use cases, C4, wireframes, ADRs |
 | `development.schema.json` | Tasks, code reviews, implementation guides |
+| `quality.schema.json` | Quality reports: test strategy, findings, consistency checks |
+| `guidance-assessment.schema.json` | Optional guidance assessments from any persona |
 
 ---
 
