@@ -222,8 +222,8 @@ if (require.main === module) {
         console.log('  1. Add input artifacts with tb-render or your MongoDB integration.');
         console.log('  2. Use tb-render --project to read or write project artifacts.');
       }
-      console.log('  3. Start the Analyst persona:');
-      console.log('     claude --system-prompt ../../personas/analyst.md');
+      console.log('  3. From the Trestleboard root, start the Analyst persona:');
+      console.log('     claude --append-system-prompt-file personas/analyst.md');
       console.log('');
     })
     .catch(error => {
